@@ -1,5 +1,5 @@
-[span_0](start_span)requests[span_0](end_span)
-[span_1](start_span)websocket-client[span_1](end_span)
-[span_2](start_span)pillow[span_2](end_span)
-[span_3](start_span)aiohttp[span_3](end_span)
-[span_4](start_span)asyncio[span_4](end_span)
+requests
+websocket-client
+pillow
+aiohttp
+asyncio
