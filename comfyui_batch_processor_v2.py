@@ -26,24 +26,32 @@ class ComfyUIBatchProcessorV2:
         )
         self.logger = logging.getLogger(__name__)
         
-        # Daftar 12 workflow yang baru
-        self.workflows = {
-            'landscape-m': 'workflows/landscape-m.json',
-            'potrait-m': 'workflows/potrait-m.json',
-            'square-m': 'workflows/square-m.json',
-            'landscape-dl': 'workflows/landscape-dl.json',
-            'potrait-dl': 'workflows/potrait-dl.json',
-            'swuare-dl': 'workflows/swuare-dl.json',
-            'vector': 'workflows/vector.json',
-            'vector-color': 'workflows/vector-color.json',
-            'flux-nsfw': 'workflows/flux-nsfw.json',
-            'lora1': 'workflows/lora1.json',
-            'lora2': 'workflows/lora2.json',
-            'lora3': 'workflows/lora3.json'
-        }
+        # --- PERUBAHAN UTAMA DIMULAI DI SINI ---
+        self.workflows = self._discover_workflows()
+
+    def _discover_workflows(self):
+        """Secara otomatis memindai folder 'workflows' dan mendaftarkan semua file .json."""
+        workflows_dir = Path('workflows')
+        if not workflows_dir.is_dir():
+            self.logger.error(f"Folder workflows tidak ditemukan di '{workflows_dir.resolve()}'")
+            return {}
+
+        discovered = {}
+        self.logger.info("Mendeteksi workflow yang tersedia...")
+        for workflow_file in workflows_dir.glob('*.json'):
+            # Ambil nama file tanpa ekstensi .json sebagai nama kunci
+            workflow_name = workflow_file.stem
+            discovered[workflow_name] = str(workflow_file)
+            self.logger.info(f" -> Ditemukan: '{workflow_name}' (dari file: {workflow_file.name})")
+        
+        if not discovered:
+            self.logger.warning("PERINGATAN: Tidak ada workflow .json yang ditemukan di dalam folder 'workflows'.")
+        
+        return discovered
+    # --- PERUBAHAN UTAMA SELESAI ---
 
     def parse_prompt_file(self, filepath):
-        """Parser baru untuk format [∆{workflow}•jumlah∆ ¥prompt¥]"""
+        """Parser untuk format [∆{workflow}•jumlah∆ ¥prompt¥]"""
         prompts = []
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
@@ -84,10 +92,10 @@ class ComfyUIBatchProcessorV2:
         return prompts
 
     def load_workflow(self, workflow_type):
-        """Memuat file workflow JSON"""
+        """Memuat file workflow JSON (Sudah dinamis)"""
         workflow_path = self.workflows.get(workflow_type)
-        if not workflow_path or not os.path.exists(workflow_path):
-            self.logger.error(f"Nama workflow '{workflow_type}' tidak ditemukan di daftar atau file .json tidak ada.")
+        if not workflow_path:
+            self.logger.error(f"Nama workflow '{workflow_type}' tidak ditemukan. Pastikan file '{workflow_type}.json' ada di folder 'workflows'.")
             raise FileNotFoundError(f"Workflow {workflow_type} tidak ditemukan")
         with open(workflow_path, 'r') as f:
             return json.load(f)
@@ -193,4 +201,5 @@ if __name__ == "__main__":
             
     processor = ComfyUIBatchProcessorV2()
     processor.process_prompts(prompt_file)
-    
+
+                                                
